@@ -57,7 +57,7 @@ export default function Signup() {
                             <Button type="submit" variant="contained" disabled={busy}>Sign up</Button>
                             <Divider>or</Divider>
                             <SocialButtons />
-                            <Link href="/login" underline="hover" sx={{ textAlign: 'center', mt: 1 }}>Already have an account? Log in</Link>
+                            <Link href="/" underline="hover" sx={{ textAlign: 'center', mt: 1 }}>Already have an account? Log in</Link>
                         </Stack>
                     </form>
                 </CardContent>

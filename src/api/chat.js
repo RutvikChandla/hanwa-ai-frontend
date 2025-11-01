@@ -51,32 +51,72 @@ export function clearSession() {
     localStorage.removeItem(SESSION_KEY);
 }
 
-// Core call - sends message through backend which proxies to n8n
+
+// export async function sendChatMessage(message) {
+//   let sessionId = getSessionId();
+//   if (!sessionId) {
+//     sessionId = await createSession();
+//   }
+
+//   const headers = { "Content-Type": "application/json" };
+//   const token = getBearer?.();
+//   if (token) headers["Authorization"] = `Bearer ${token}`;
+
+//   const res = await fetch(CHAT_URL, {
+//     method: "POST",
+//     headers,
+//     body: JSON.stringify({ sessionId, message }),
+//     credentials: "include",
+//   });
+
+//   if (!res.ok) {
+//     const text = await res.text().catch(() => "");
+//     throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
+//   }
+
+//   // Your API sometimes responds as { success, data: {...} } and sometimes just {...}
+//   const json = await res.json().catch(() => ({}));
+//   const payload = json?.data ?? json;
+
+//   // Normalize: always return an object with { reply, suggestions?, metrics?, metadata? }
+//   return {
+//     reply: payload.reply ?? payload.message ?? payload.response ?? "",
+//     suggestions: payload.suggestions ?? [],
+//     metrics: Array.isArray(payload.metrics) ? payload.metrics : null,
+//     metadata: payload.metadata ?? null,
+//     sessionId: payload.sessionId ?? sessionId,
+//   };
+// }
 export async function sendChatMessage(message) {
-    let sessionId = getSessionId();
+  let sessionId = getSessionId();
+  if (!sessionId) {
+    sessionId = await createSession();
+  }
 
-    // If no session exists, create one first
-    if (!sessionId) {
-        sessionId = await createSession();
-    }
+  const headers = { "Content-Type": "application/json" };
+  const token = getBearer?.();
+  if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const headers = { "Content-Type": "application/json" };
-    const token = getBearer();
-    if (token) headers["Authorization"] = `Bearer ${token}`;
+  const res = await fetch(CHAT_URL, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ sessionId, message }),
+    credentials: "include",
+  });
 
-    const res = await fetch(CHAT_URL, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ sessionId, message }),
-    });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
+  }
 
-    if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
-    }
+  const json = await res.json().catch(() => ({}));
+  const payload = json?.data ?? json;
 
-    const data = await res.json().catch(() => ({}));
-
-    // Backend returns { success: true, data: { sessionId, reply, suggestions, metadata } }
-    return data.data?.reply ?? data.reply ?? data.message ?? data.response ?? "";
+  return {
+    reply: payload.reply ?? payload.message ?? payload.response ?? "",
+    suggestions: Array.isArray(payload.suggestions) ? payload.suggestions : [],
+    metrics: Array.isArray(payload.metrics) ? payload.metrics : null,
+    metadata: payload.metadata ?? null,
+    sessionId: payload.sessionId ?? sessionId,
+  };
 }
